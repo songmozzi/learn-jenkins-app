@@ -60,7 +60,7 @@ pipeline {
             steps {
                 // not use root, can install local
                 sh ''' 
-                    npm install -g serve
+                    npm install serve
                     node_modules/.bin/serve -s build
                     npx playwright test
                 '''
