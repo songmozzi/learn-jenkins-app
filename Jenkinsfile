@@ -3,10 +3,6 @@ pipeline {
 
     stages {
         // comment type1: This is a comment
-        /*
-        comment type2
-        Line 1
-        line 2
         
         stage('Build') {
             agent {
@@ -27,7 +23,7 @@ pipeline {
 
             }
         }
-        */
+        
 
         stage('Tests') {
             parallel {
@@ -45,6 +41,11 @@ pipeline {
                             npm test
                         '''
                     }
+                    post {
+                        always {
+                            junit 'jest-results/junit.xml'
+                        }
+                    }                    
                 }
             
                 stage('E2E') {
@@ -68,15 +69,31 @@ pipeline {
                             npx playwright test --reporter=html
                         '''
                     }
+
+                    post {
+                        always {
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwirght HTML Report', reportTitles: '', useWrapperFileDirectly: true])
+                        }
+                    }                    
                 }                
             }
         }
-    }
 
-    post {
-        always {
-            junit 'jest-results/junit.xml'
-            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwirght HTML Report', reportTitles: '', useWrapperFileDirectly: true])
+
+        stage('Deploy') {
+            agent {
+                docker {
+                    image 'node:18-alpine'
+                    reuseNode true
+                }
+            }
+            steps {
+                sh '''
+                    npm install netlify-cli -g
+                    netlify --version
+                '''
+
+            }
         }
     }
 }
