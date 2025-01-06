@@ -79,7 +79,7 @@ pipeline {
 
                     post {
                         always {
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwirght HTML Report', reportTitles: '', useWrapperFileDirectly: true])
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwirght Local', reportTitles: '', useWrapperFileDirectly: true])
                         }
                     }                    
                 }                
@@ -104,5 +104,35 @@ pipeline {
                 '''
             }
         }
+
+        stage('Prod E2E') {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    reuseNode true
+                    /* bad case
+                    args '-u root:root'
+                    */
+
+                }
+            }
+
+            environment {
+                CI_ENVIRONMENT_URL = 'https://astonishing-twilight-731ccc.netlify.app'
+            }
+            
+            steps {
+                // not use root, can install local
+                sh ''' 
+                    npx playwright test --reporter=html
+                '''
+            }
+
+            post {
+                always {
+                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwirght E2E', reportTitles: '', useWrapperFileDirectly: true])
+                }
+            }                    
+        }  
     }
 }
