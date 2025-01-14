@@ -6,10 +6,8 @@ pipeline {
         NETLIFY_AUTH_TOKEN = credentials('netlify-token')
     }
 
-
     stages {
-        // comment type1: This is a comment
-        
+
         stage('Build') {
             agent {
                 docker {
@@ -19,7 +17,6 @@ pipeline {
             }
             steps {
                 sh '''
-                    echo 'Small change'
                     ls -la
                     node --version
                     npm --version
@@ -27,10 +24,8 @@ pipeline {
                     npm run build
                     ls -la
                 '''
-
             }
         }
-        
 
         stage('Tests') {
             parallel {
@@ -41,9 +36,9 @@ pipeline {
                             reuseNode true
                         }
                     }
-                    
+
                     steps {
-                        sh ''' 
+                        sh '''
                             #test -f build/index.html
                             npm test
                         '''
@@ -52,37 +47,32 @@ pipeline {
                         always {
                             junit 'jest-results/junit.xml'
                         }
-                    }                    
+                    }
                 }
-            
+
                 stage('E2E') {
                     agent {
                         docker {
                             image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
                             reuseNode true
-                            /* bad case
-                            args '-u root:root'
-                            */
-
                         }
                     }
-                    
+
                     steps {
-                        // not use root, can install local
-                        sh ''' 
+                        sh '''
                             npm install serve
                             node_modules/.bin/serve -s build &
                             sleep 10
-                            npx playwright test --reporter=html
+                            npx playwright test  --reporter=html
                         '''
                     }
 
                     post {
                         always {
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwirght Local', reportTitles: '', useWrapperFileDirectly: true])
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Local E2E', reportTitles: '', useWrapperFileDirectly: true])
                         }
-                    }                    
-                }                
+                    }
+                }
             }
         }
 
@@ -112,21 +102,16 @@ pipeline {
                 docker {
                     image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
                     reuseNode true
-                    /* bad case
-                    args '-u root:root'
-                    */
-
                 }
             }
 
             environment {
                 CI_ENVIRONMENT_URL = "${env.STAGING_URL}"
             }
-            
+
             steps {
-                // not use root, can install local
-                sh ''' 
-                    npx playwright test --reporter=html
+                sh '''
+                    npx playwright test  --reporter=html
                 '''
             }
 
@@ -134,9 +119,8 @@ pipeline {
                 always {
                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Staging E2E', reportTitles: '', useWrapperFileDirectly: true])
                 }
-            }                    
-        }  
-
+            }
+        }
 
         stage('Approval') {
             steps {
@@ -145,7 +129,6 @@ pipeline {
                 }
             }
         }
-
 
         stage('Deploy prod') {
             agent {
@@ -170,21 +153,16 @@ pipeline {
                 docker {
                     image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
                     reuseNode true
-                    /* bad case
-                    args '-u root:root'
-                    */
-
                 }
             }
 
             environment {
                 CI_ENVIRONMENT_URL = 'https://astonishing-twilight-731ccc.netlify.app'
             }
-            
+
             steps {
-                // not use root, can install local
-                sh ''' 
-                    npx playwright test --reporter=html
+                sh '''
+                    npx playwright test  --reporter=html
                 '''
             }
 
@@ -192,7 +170,7 @@ pipeline {
                 always {
                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Prod E2E', reportTitles: '', useWrapperFileDirectly: true])
                 }
-            }                    
-        }  
+            }
+        }
     }
 }
